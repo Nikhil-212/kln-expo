@@ -1,0 +1,283 @@
+/* Custom Styles for Legal Document Generator */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Root Variables */
+:root {
+    --primary-color: #2563eb;
+    --primary-dark: #1d4ed8;
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --light-bg: #f8fafc;
+    --dark-bg: #1e293b;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+/* Global Styles */
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* Navigation Enhancements */
+.navbar {
+    background: var(--gradient-primary) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-lg);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    background: linear-gradient(45deg, #ffffff, #e0e7ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Card Enhancements */
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 16px 16px 0 0 !important;
+    padding: 1.5rem;
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+.card-footer {
+    background: #f8fafc;
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 16px 16px !important;
+}
+
+/* Button Enhancements */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.3s ease;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary {
+    background: var(--gradient-primary);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.btn-outline-primary {
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    background: transparent;
+}
+
+.btn-outline-primary:hover {
+    background: var(--gradient-primary);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.btn-success {
+    background: var(--gradient-secondary);
+    box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+}
+
+.btn-success:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+}
+
+/* Form Enhancements */
+.form-control {
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    background: white;
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+/* Alert Enhancements */
+.alert {
+    border-radius: 12px;
+    border: none;
+    box-shadow: var(--shadow-sm);
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    color: #dc2626;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    color: #2563eb;
+}
+
+/* Document Content Styling */
+#document-content {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    font-size: 1rem;
+    line-height: 1.8;
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-up {
+    animation: slideUp 0.6s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design Improvements */
+@media (max-width: 768px) {
+    .container {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .btn {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Loading Animation */
+.loading {
+    position: relative;
+    overflow: hidden;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--light-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--secondary-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}
+
+/* Print Styles */
+@media print {
+    body {
+        background: white !important;
+    }
+
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #ddd !important;
+    }
+
+    .no-print {
+        display: none !important;
+    }
+}
