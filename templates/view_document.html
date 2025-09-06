@@ -10,7 +10,7 @@
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary no-print">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Legal Document Generator</a>
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">Legal Document Generator</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -37,7 +37,7 @@
                     <div class="card-header d-flex justify-content-between align-items-center no-print">
                         <h4 class="mb-0">{{ doc_type|title|replace('_', ' ') }}</h4>
                         <div>
-                            <a href="{{ url_for('document_form', doc_type=doc_type) }}" class="btn btn-outline-primary btn-sm me-2">Edit</a>
+                            <a href="{{ url_for('document.document_form', doc_type=doc_type) }}" class="btn btn-outline-primary btn-sm me-2">Edit</a>
                             <button onclick="window.print()" class="btn btn-primary btn-sm me-2">Print</button>
                             <button onclick="downloadAsText()" class="btn btn-success btn-sm me-2">Download TXT</button>
                             <button onclick="downloadAsDocx()" class="btn btn-info btn-sm me-2">Download DOCX</button>
@@ -59,7 +59,7 @@
                             {% endif %}
                     </div>
                     <div class="card-footer text-end no-print">
-                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Back to Home</a>
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Back to Home</a>
                     </div>
                 </div>
             </div>

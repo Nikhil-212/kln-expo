@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document History - Legal Document Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">Legal Document Generator</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.index') }}"><i class="fas fa-home"></i> Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('main.user_history') }}"><i class="fas fa-history"></i> History</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    {% if user %}
+                        <li class="nav-item">
+                            <span class="navbar-text me-3"><i class="fas fa-user-circle"></i> Welcome, {{ user.username }}!</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}"><i class="fas fa-sign-in-alt"></i> Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.signup') }}"><i class="fas fa-user-plus"></i> Sign Up</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card fade-in">
+                    <div class="card-header">
+                        <h4 class="mb-0"><i class="fas fa-history"></i> Your Document Generation History</h4>
+                    </div>
+                    <div class="card-body">
+                        {% if history %}
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th><i class="fas fa-calendar"></i> Date & Time</th>
+                                            <th><i class="fas fa-file-alt"></i> Action</th>
+                                            <th><i class="fas fa-info-circle"></i> Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in history %}
+                                            <tr>
+                                                <td>
+                                                    {% if item.timestamp %}
+                                                        {{ item.timestamp }}
+                                                    {% else %}
+                                                        N/A
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if item.action == 'generate_document' %}
+                                                        <span class="badge bg-success"><i class="fas fa-file-contract"></i> Document Generated</span>
+                                                    {% elif item.action == 'generate_from_prompt' %}
+                                                        <span class="badge bg-primary"><i class="fas fa-magic"></i> Prompt Generated</span>
+                                                    {% elif item.action == 'login' %}
+                                                        <span class="badge bg-info"><i class="fas fa-sign-in-alt"></i> Login</span>
+                                                    {% elif item.action == 'signup' %}
+                                                        <span class="badge bg-warning"><i class="fas fa-user-plus"></i> Account Created</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ item.action }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ item.details or 'N/A' }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">No History Yet</h5>
+                                <p class="text-muted">Start generating documents to see your history here.</p>
+                                <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Generate Your First Document
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

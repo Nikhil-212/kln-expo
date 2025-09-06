@@ -1,14 +1,16 @@
 """Routes package for the application."""
 from flask import Blueprint
 
-try:
-    # Create blueprints
-    auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
-    main_bp = Blueprint('main', __name__)
+# Create blueprints
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+main_bp = Blueprint('main', __name__)
+document_bp = Blueprint('document', __name__)
 
+try:
     # Import routes to register them with blueprints
     from . import auth_routes
     from . import main_routes
+    from . import document
 
     # Import error handlers
     from . import errors

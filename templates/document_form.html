@@ -9,7 +9,7 @@
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">Legal Document Generator</a>
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">Legal Document Generator</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -34,7 +34,7 @@
                         <h4 class="mb-0">Generate {{ doc_type|title|replace('_', ' ') }}</h4>
                     </div>
                     <div class="card-body">
-                        <form method="POST" action="{{ url_for('generate_document') }}">
+                        <form method="POST" action="{{ url_for('document.generate_document') }}">
                             <input type="hidden" name="doc_type" value="{{ doc_type }}">
                             {% for field in fields %}
                                     {% set missing = error and (field in error) and (values[field]|length == 0) %}
@@ -47,7 +47,7 @@
                                     </div>
                             {% endfor %}
                             <div class="d-flex justify-content-between">
-                                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Back</a>
+                                <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Back</a>
                                 <button type="submit" class="btn btn-primary">Generate Document</button>
                             </div>
                         </form>

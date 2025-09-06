@@ -1,3 +1,4 @@
+
 # Virtual Environment
 .venv/
 venv/
@@ -95,6 +96,13 @@ celerybeat.pid
 
 # SageMath parsed files
 *.sage.py
+
+# Project specific
+backup/
+supabase_setup.py
+test_supabase.py
+*.sqlite
+*.db-journal
 
 # Spyder project settings
 .spyderproject
