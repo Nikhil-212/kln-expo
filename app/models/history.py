@@ -12,6 +12,14 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 def add_user_history(user_id, action, details=None):
     try:
+        # Convert user_id to integer if it's a string
+        if isinstance(user_id, str):
+            try:
+                user_id = int(user_id)
+            except ValueError:
+                print(f"Invalid user_id format: {user_id}")
+                return None
+
         data = {
             'user_id': user_id,
             'action': action,

@@ -5,7 +5,11 @@
 - [x] Updated logout to clear all session data
 - [x] Added get_user_from_session function in app/models/users.py
 - [x] Updated app/routes/main_routes.py to use session-stored user data
+- [x] Updated language options to full names (English, Telugu, etc.)
+- [x] Enhanced UI with icons and better styling
+- [x] Added translation functionality for non-English languages
 
 ## Next Steps
 - Test the login flow to ensure username displays correctly after login
 - Verify logout clears the session and shows login/signup again
+- Test the translation feature for document generation

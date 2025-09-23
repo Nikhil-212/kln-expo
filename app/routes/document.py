@@ -14,9 +14,33 @@ from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.lib.units import inch
 from datetime import datetime
 import re
+import requests
+
 
 nlp = spacy.load('en_core_web_sm')
 processor = LegalDocumentProcessor()
+
+def translate_text(text, target_lang):
+    """Translate text using MyMemory API"""
+    if not text.strip():
+        return text
+
+    try:
+        url = f"https://api.mymemory.translated.net/get?q={text}&langpair=en|{target_lang}"
+        print(f"Translating: '{text}' to {target_lang} using URL: {url}")
+        response = requests.get(url, timeout=5)
+        data = response.json()
+        print(f"Translation response: {data}")
+        if data['responseStatus'] == 200:
+            translated = data['responseData']['translatedText']
+            print(f"Translated '{text}' to '{translated}'")
+            return translated
+        else:
+            print(f"Translation failed for '{text}'")
+            return text  # Fallback to original text
+    except Exception as e:
+        print(f"Translation error for '{text}': {e}")
+        return text  # Fallback to original text
 
 def get_default_data_for_document(doc_type, language):
     """Get default data for realistic document generation"""
@@ -281,7 +305,19 @@ documents = {
 def document_form(doc_type):
     if doc_type not in documents:
         return render_template('index.html', error='Invalid document type')
-    languages = list(documents[doc_type]['templates'].keys())
+    language_mapping = {
+        'en': 'English',
+        'hi': 'Hindi',
+        'bn': 'Bengali',
+        'te': 'Telugu',
+        'mr': 'Marathi',
+        'ur': 'Urdu',
+        'gu': 'Gujarati',
+        'kn': 'Kannada',
+        'or': 'Odia',
+        'ta': 'Tamil'
+    }
+    languages = [{'code': lang, 'name': language_mapping.get(lang, lang.upper())} for lang in documents[doc_type]['templates'].keys()]
     return render_template('document_form.html', doc_type=doc_type, fields=documents[doc_type]['fields'], languages=languages)
 
 @document_bp.route('/generate', methods=['POST'])
@@ -294,6 +330,170 @@ def generate_document():
     # Collect field values and check for missing ones
     fields = documents[doc_type]['fields']
     data = {field: request.form.get(field, '').strip() for field in fields}
+
+    # Map form fields to template placeholders
+    field_mapping = {
+        'rental_agreement': {
+            'owner_name': 'owner_name',
+            'owner_age': 'owner_age',
+            'owner_father': 'owner_father',
+            'owner_address': 'owner_address',
+            'owner_city': 'owner_city',
+            'owner_pincode': 'owner_pincode',
+            'renter_name': 'renter_name',
+            'renter_age': 'renter_age',
+            'renter_father': 'renter_father',
+            'renter_address': 'renter_address',
+            'renter_city': 'renter_city',
+            'renter_pincode': 'renter_pincode',
+            'property_address': 'property_address',
+            'property_city': 'property_city',
+            'property_pincode': 'property_pincode',
+            'start_date': 'start_date',
+            'effective_date': 'effective_date',
+            'duration': 'duration',
+            'renewal_period': 'renewal_period',
+            'rent_amount': 'rent_amount',
+            'rent_amount_words': 'rent_amount_words',
+            'rent_due_date': 'rent_due_date',
+            'rent_increase_percentage': 'rent_increase_percentage',
+            'security_deposit': 'security_deposit',
+            'security_deposit_words': 'security_deposit_words',
+            'notice_period': 'notice_period',
+            'jurisdiction': 'jurisdiction',
+            'witness1_name': 'witness1_name',
+            'witness1_address': 'witness1_address',
+            'witness2_name': 'witness2_name',
+            'witness2_address': 'witness2_address',
+            'execution_date': 'execution_date',
+            'execution_place': 'execution_place',
+            'date': 'date',
+            'month': 'month',
+            'year': 'year'
+        },
+        'land_sale_deed': {
+            'seller': 'seller',
+            'seller_age': 'seller_age',
+            'seller_father': 'seller_father',
+            'seller_address': 'seller_address',
+            'seller_city': 'seller_city',
+            'seller_pincode': 'seller_pincode',
+            'buyer': 'buyer',
+            'buyer_age': 'buyer_age',
+            'buyer_father': 'buyer_father',
+            'buyer_address': 'buyer_address',
+            'buyer_city': 'buyer_city',
+            'buyer_pincode': 'buyer_pincode',
+            'sale_amount': 'sale_amount',
+            'sale_amount_words': 'sale_amount_words',
+            'stamp_duty_bearer': 'stamp_duty_bearer',
+            'registration_office': 'registration_office',
+            'survey_number': 'survey_number',
+            'area': 'area',
+            'north_boundary': 'north_boundary',
+            'south_boundary': 'south_boundary',
+            'east_boundary': 'east_boundary',
+            'west_boundary': 'west_boundary',
+            'property_address': 'property_address',
+            'property_city': 'property_city',
+            'property_pincode': 'property_pincode',
+            'witness1_name': 'witness1_name',
+            'witness1_address': 'witness1_address',
+            'witness2_name': 'witness2_name',
+            'witness2_address': 'witness2_address',
+            'execution_date': 'execution_date',
+            'execution_place': 'execution_place',
+            'date': 'date',
+            'month': 'month',
+            'year': 'year'
+        },
+        'power_of_attorney': {
+            'principal': 'principal',
+            'principal_age': 'principal_age',
+            'principal_father': 'principal_father',
+            'principal_address': 'principal_address',
+            'principal_city': 'principal_city',
+            'principal_pincode': 'principal_pincode',
+            'attorney': 'attorney',
+            'attorney_age': 'attorney_age',
+            'attorney_father': 'attorney_father',
+            'attorney_address': 'attorney_address',
+            'attorney_city': 'attorney_city',
+            'attorney_pincode': 'attorney_pincode',
+            'matter_description': 'matter_description',
+            'effective_date': 'effective_date',
+            'expiry_date': 'expiry_date',
+            'registration_office': 'registration_office',
+            'stamp_duty_bearer': 'stamp_duty_bearer',
+            'witness1_name': 'witness1_name',
+            'witness1_address': 'witness1_address',
+            'witness2_name': 'witness2_name',
+            'witness2_address': 'witness2_address',
+            'execution_date': 'execution_date',
+            'execution_place': 'execution_place',
+            'date': 'date',
+            'month': 'month',
+            'year': 'year'
+        },
+        'house_lease': {
+            'lessor': 'lessor',
+            'lessor_age': 'lessor_age',
+            'lessor_father': 'lessor_father',
+            'lessor_address': 'lessor_address',
+            'lessor_city': 'lessor_city',
+            'lessor_pincode': 'lessor_pincode',
+            'lessee': 'lessee',
+            'lessee_age': 'lessee_age',
+            'lessee_father': 'lessee_father',
+            'lessee_address': 'lessee_address',
+            'lessee_city': 'lessee_city',
+            'lessee_pincode': 'lessee_pincode',
+            'property_address': 'property_address',
+            'property_city': 'property_city',
+            'property_pincode': 'property_pincode',
+            'lease_period': 'lease_period',
+            'start_date': 'start_date',
+            'end_date': 'end_date',
+            'lease_amount': 'lease_amount',
+            'lease_amount_words': 'lease_amount_words',
+            'rent_due_date': 'rent_due_date',
+            'security_deposit': 'security_deposit',
+            'security_deposit_words': 'security_deposit_words',
+            'notice_period': 'notice_period',
+            'jurisdiction': 'jurisdiction',
+            'number_of_rooms': 'number_of_rooms',
+            'witness1_name': 'witness1_name',
+            'witness1_address': 'witness1_address',
+            'witness2_name': 'witness2_name',
+            'witness2_address': 'witness2_address',
+            'execution_date': 'execution_date',
+            'execution_place': 'execution_place',
+            'date': 'date',
+            'month': 'month',
+            'year': 'year'
+        }
+    }
+
+    if doc_type in field_mapping:
+        mapped_data = {}
+        for form_field, template_field in field_mapping[doc_type].items():
+            mapped_data[template_field] = data.get(form_field, '')
+        data = mapped_data
+
+    # Translate data if language is not English
+    if language != 'en':
+        print(f"Translating data to {language}")
+        translated_data = {}
+        for key, value in data.items():
+            if value.strip():  # Only translate non-empty values
+                translated = translate_text(value, language)
+                translated_data[key] = translated
+                print(f"Translated {key}: '{value}' -> '{translated}'")
+            else:
+                translated_data[key] = value
+        data = translated_data
+        print(f"Translation complete for {language}")
+
     # No longer require all fields to be filled. Missing fields will simply be empty in the template.
     # missing_fields = [field for field, value in data.items() if not value]
 
