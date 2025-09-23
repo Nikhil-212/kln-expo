@@ -16,30 +16,33 @@ except OSError:
     subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
     nlp = spacy.load("en_core_web_sm")
 
+from app.services.document_generator import DocumentGenerator
+
 class LegalDocumentProcessor:
     def __init__(self):
         self.document_types = {
             'rental_agreement': {
                 'keywords': ['rental', 'rent', 'lease', 'tenant', 'landlord', 'monthly'],
-                'required_fields': ['landlord', 'tenant', 'address', 'rent_amount', 'start_date', 'duration'],
+                'required_fields': ['landlord', 'landlord_address', 'tenant', 'tenant_address', 'property_address', 'rent_amount', 'start_date', 'duration'],
                 'template': 'rental_agreement_template.txt'
             },
             'land_sale_deed': {
                 'keywords': ['sale', 'deed', 'property', 'buyer', 'seller', 'purchase'],
-                'required_fields': ['seller', 'buyer', 'property_description', 'sale_amount'],
+                'required_fields': ['seller', 'seller_address', 'buyer', 'buyer_address', 'property_address', 'sale_amount'],
                 'template': 'land_sale_deed_template.txt'
             },
             'power_of_attorney': {
                 'keywords': ['power', 'attorney', 'delegate', 'authority', 'behalf'],
-                'required_fields': ['grantor', 'attorney', 'powers', 'duration'],
+                'required_fields': ['principal', 'principal_address', 'attorney', 'attorney_address', 'matter_description', 'effective_date', 'expiry_date'],
                 'template': 'power_of_attorney_template.txt'
             },
             'house_lease': {
                 'keywords': ['house', 'lease', 'lessor', 'lessee', 'property'],
-                'required_fields': ['lessor', 'lessee', 'property_address', 'lease_amount', 'start_date', 'duration'],
+                'required_fields': ['lessor', 'lessor_address', 'lessee', 'lessee_address', 'property_address', 'lease_amount', 'start_date', 'duration'],
                 'template': 'house_lease_template.txt'
             }
         }
+        self.document_generator = DocumentGenerator()
 
         self.entity_patterns = {
             'amounts': r'(?:Rs\.?|INR)?\s*(\d+(?:,\d+)*(?:\.\d{2})?)\s*(?:rupees?|Rs\.?|INR)?',
@@ -79,8 +82,8 @@ class LegalDocumentProcessor:
                     entities['seller'] = ent.text
                 elif 'buyer' not in entities:
                     entities['buyer'] = ent.text
-                elif 'grantor' not in entities:
-                    entities['grantor'] = ent.text
+                elif 'principal' not in entities:
+                    entities['principal'] = ent.text
                 elif 'attorney' not in entities:
                     entities['attorney'] = ent.text
                 elif 'lessor' not in entities:
@@ -88,10 +91,27 @@ class LegalDocumentProcessor:
                 elif 'lessee' not in entities:
                     entities['lessee'] = ent.text
             elif ent.label_ == 'GPE' or ent.label_ == 'LOC':
-                if 'address' not in entities:
-                    entities['address'] = ent.text
+                # Try to assign to specific address fields first
+                if 'landlord_address' not in entities: # Added specific address field
+                    entities['landlord_address'] = ent.text
+                elif 'tenant_address' not in entities: # Added specific address field
+                    entities['tenant_address'] = ent.text
+                elif 'seller_address' not in entities: # Added specific address field
+                    entities['seller_address'] = ent.text
+                elif 'buyer_address' not in entities: # Added specific address field
+                    entities['buyer_address'] = ent.text
+                elif 'principal_address' not in entities: # Added specific address field
+                    entities['principal_address'] = ent.text
+                elif 'attorney_address' not in entities: # Added specific address field
+                    entities['attorney_address'] = ent.text
+                elif 'lessor_address' not in entities: # Added specific address field
+                    entities['lessor_address'] = ent.text
+                elif 'lessee_address' not in entities: # Added specific address field
+                    entities['lessee_address'] = ent.text
                 elif 'property_address' not in entities:
                     entities['property_address'] = ent.text
+                elif 'address' not in entities:
+                    entities['address'] = ent.text
 
         # Extract amounts using regex
         amount_match = re.search(self.entity_patterns['amounts'], prompt, re.IGNORECASE)
@@ -104,50 +124,55 @@ class LegalDocumentProcessor:
         date_match = re.search(self.entity_patterns['dates'], prompt, re.IGNORECASE)
         if date_match:
             entities['start_date'] = date_match.group(0)
+            entities['effective_date'] = date_match.group(0)
+            entities['expiry_date'] = date_match.group(0)
             entities['sale_date'] = date_match.group(0)
 
         # Extract durations
         duration_match = re.search(self.entity_patterns['durations'], prompt, re.IGNORECASE)
         if duration_match:
             entities['duration'] = duration_match.group(0)
+            entities['renewal_period'] = duration_match.group(0)
+            entities['lease_period'] = duration_match.group(0)
+            entities['notice_period'] = duration_match.group(0)
+
+        # Extract other specific fields if they are present in the prompt
+        # For example, extracting property description for land_sale_deed
+        if 'property_description' not in entities:
+            # This is a simple placeholder. More sophisticated NLP might be needed for actual extraction.
+            # For now, if the prompt contains a phrase like "a property located at X", we can try to extract X
+            match = re.search(r'a property located at (.+?)(?:\.|,|$)', prompt, re.IGNORECASE)
+            if match:
+                entities['property_description'] = match.group(1).strip()
+        
+        if 'matter_description' not in entities:
+            match = re.search(r'for (.+?) purposes', prompt, re.IGNORECASE)
+            if match:
+                entities['matter_description'] = match.group(1).strip() + ' purposes'
+        
+        # You might need more specific regex or NLP rules for other fields like father's name, city, pincode, etc.
+        # For now, let's assume these would be provided through the form or default values.
 
         return entities
 
-    def generate_document(self, doc_type, entities):
+    def identify_missing_fields(self, doc_type, entities):
+        """Identify missing required fields for the document type"""
+        required_fields = self.document_types[doc_type]['required_fields']
+        missing_fields = []
+        
+        for field in required_fields:
+            if field not in entities or not entities[field]:
+                missing_fields.append(field)
+        
+        return missing_fields
+
+    def generate_document(self, doc_type, entities, language='en'):
         """Generate document content by filling the template with extracted entities"""
         if doc_type not in self.document_types:
             raise ValueError(f"Unsupported document type: {doc_type}")
 
-        template_path = os.path.join('templates', self.document_types[doc_type]['template'])
-
-        try:
-            with open(template_path, 'r', encoding='utf-8') as f:
-                template_content = f.read()
-
-            template = Template(template_content)
-
-            # Fill in the entities, using defaults for missing fields
-            filled_data = {}
-            for field in self.document_types[doc_type]['required_fields']:
-                filled_data[field] = entities.get(field, f'[{field.replace("_", " ").title()}]')
-
-            # Add current date information
-            now = datetime.now()
-            filled_data.update({
-                'date': now.strftime('%d'),
-                'month': now.strftime('%B'),
-                'year': now.strftime('%Y'),
-                'execution_date': now.strftime('%d/%m/%Y'),
-                'execution_place': 'City'
-            })
-
-            document = template.render(**filled_data)
-            return document
-
-        except FileNotFoundError:
-            raise ValueError(f"Template file not found: {template_path}")
-        except Exception as e:
-            raise ValueError(f"Error generating document: {str(e)}")
+        # Delegate to DocumentGenerator for multi-language support
+        return self.document_generator.generate_document(doc_type, entities, language)
 
     def generate_docx(self, content, filename):
         """Generate a .docx file from the document content"""

@@ -69,6 +69,7 @@ A web-based platform that generates legal documents from natural language prompt
 - **Natural Language Processing**: Uses spaCy for entity extraction and regex patterns for information parsing
 - **Document Type Classification**: Automatically identifies document type from user prompts
 - **Interactive Form Completion**: Prompts users for missing required information
+- **Multi-language Support**: Generate documents in multiple languages (e.g., English, Spanish, Hindi).
 - **Multiple Document Types**: Supports Rental Agreements, Land Sale Deeds, Power of Attorney, and House Leases
 - **Multiple Export Formats**: Generate documents in DOCX and PDF formats
 - **Modern Web Interface**: Responsive design with step-by-step workflow
@@ -116,6 +117,9 @@ legal-doc-generator/
 3. **Install spaCy language model**
    ```bash
    python -m spacy download en_core_web_sm
+
+   # For other languages, download the respective models. For Hindi, you can use a multilingual model:
+   python -m spacy download xx_ent_wiki_sm
    ```
 
 4. **Run the application**
@@ -126,7 +130,7 @@ legal-doc-generator/
 5. **Access the application**
    Open your browser and go to: `http://localhost:5000`
 
-## 📋 Supported Document Types
+## 📋 Supported Document Types & Languages
 
 ### 1. Rental Agreement
 - **Keywords**: rental, rent, lease, tenant, landlord, monthly
@@ -143,6 +147,11 @@ legal-doc-generator/
 ### 4. House Lease
 - **Keywords**: house, lease, residential, accommodation
 - **Required Fields**: lessor, lessee, property_address, lease_amount, start_date, duration
+
+### 5. किराया समझौता (Hindi Rental Agreement)
+- **Language**: Hindi (`hi`)
+- **Keywords**: किराया, समझौता, मकान मालिक, किरायेदार, पट्टा
+- **Required Fields**: makaan_malik, kirayedar, pata, kiraya_rashi, prarambh_tithi, avadhi
 
 ## 💡 Example Usage
 
@@ -300,7 +309,7 @@ Generate final document with all required data.
 
 - [ ] User authentication and history tracking
 - [ ] Admin panel for template management
-- [ ] Multi-language support (Hindi, etc.)
+- [ ] Add more languages (e.g., French, German)
 - [ ] Digital signature integration
 - [ ] Email/WhatsApp document delivery
 - [ ] More document types and templates
@@ -334,6 +343,7 @@ For issues and questions:
    ```bash
    python -m spacy download en_core_web_sm
    ```
+   For other languages, ensure you have downloaded the correct model (e.g., `xx_ent_wiki_sm` for Hindi).
 
 2. **PDF generation fails**
    - Install wkhtmltopdf: `brew install wkhtmltopdf` (macOS) or download from official website

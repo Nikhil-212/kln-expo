@@ -1,6 +1,8 @@
 from datetime import datetime
 import os
 from typing import Dict, List, Optional
+from jinja2 import Template, Environment
+from jinja2.loaders import FileSystemLoader
 
 class DocumentGenerator:
     def __init__(self):
@@ -11,6 +13,12 @@ class DocumentGenerator:
         # Create custom templates directory if it doesn't exist
         os.makedirs(self.custom_template_dir, exist_ok=True)
         os.makedirs(os.path.join(self.custom_template_dir, 'versions'), exist_ok=True)
+
+        self.env = Environment(
+            loader=FileSystemLoader(self.base_template_dir),
+            trim_blocks=False,
+            lstrip_blocks=False
+        )
 
     def get_required_fields(self, doc_type: str) -> Dict[str, str]:
         """Get the required fields for a document type."""
@@ -54,14 +62,14 @@ class DocumentGenerator:
                 
         return missing_fields
 
-    def _load_template(self, doc_type: str, language: str = 'en', custom_template: Optional[str] = None) -> str:
+    def _load_template(self, doc_type: str, language: str = 'en', custom_template: Optional[str] = None) -> Template:
         """Load the template file for the given document type and language."""
         if custom_template:
             template_path = os.path.join(self.custom_template_dir, custom_template)
             if not os.path.exists(template_path):
                 raise ValueError(f"Custom template not found: {custom_template}")
             with open(template_path, 'r', encoding='utf-8') as f:
-                return f.read()
+                return self.env.from_string(f.read())
 
         template_map = {
             'house_lease': 'house_lease_template.txt',
@@ -73,16 +81,25 @@ class DocumentGenerator:
         if doc_type not in template_map:
             raise ValueError(f"Invalid document type: {doc_type}")
 
-        template_file = template_map[doc_type]
-        template_dir = self.ta_template_dir if language == 'ta' else self.base_template_dir
+        template_file_name = template_map[doc_type]
         
-        template_path = os.path.join(template_dir, template_file)
-        if not os.path.exists(template_path):
-            # Fallback to English if Tamil template doesn't exist
-            template_path = os.path.join(self.base_template_dir, template_file)
-            
-        with open(template_path, 'r', encoding='utf-8') as f:
-            return f.read()
+        # Use language subdirectory if exists, else fallback to base_template_dir
+        template_dir = os.path.join(self.base_template_dir, language)
+        template_full_path_lang = os.path.join(template_dir, template_file_name)
+        template_relative_path_lang = os.path.join(language, template_file_name).replace(os.sep, '/')
+        template_relative_path_base = template_file_name
+
+        # Try loading language-specific template first
+        if os.path.exists(template_full_path_lang): # Check if the language-specific file exists
+            try:
+                print(f"Attempting to load language-specific template: {template_relative_path_lang}")
+                return self.env.get_template(template_relative_path_lang)
+            except Exception as e:
+                print(f"Error loading language-specific template '{template_relative_path_lang}': {e}. Falling back to base template.")
+                return self.env.get_template(template_relative_path_base)
+        else:
+            print(f"Language-specific template file not found at '{template_full_path_lang}'. Falling back to base template.")
+            return self.env.get_template(template_relative_path_base)
 
     def save_custom_template(self, filename: str, content: str) -> str:
         """Save a custom template and return its filename."""
@@ -100,61 +117,51 @@ class DocumentGenerator:
             
         return new_filename
 
-    def generate_house_lease(self, data):
+    def generate_house_lease(self, data, language='en'):
         """Generate a house lease agreement."""
-        template = self._load_template('house_lease')
+        template = self._load_template('house_lease', language)
         current_date = datetime.now().strftime("%B %d, %Y")
+        data_with_date = data.copy()
+        data_with_date['date'] = current_date
         
-        # Replace placeholders with actual data
-        document = template.replace('[DATE]', current_date)
-        document = document.replace('[LANDLORD_NAME]', data['landlord_name'])
-        document = document.replace('[TENANT_NAME]', data['tenant_name'])
-        document = document.replace('[PROPERTY_ADDRESS]', data['property_address'])
-        document = document.replace('[RENT_AMOUNT]', str(data['rent_amount']))
-        document = document.replace('[LEASE_TERM]', str(data['lease_term']))
+        document = template.render(**data_with_date)
         
         return document
 
-    def generate_power_of_attorney(self, data):
+    def generate_power_of_attorney(self, data, language='en'):
         """Generate a power of attorney document."""
-        template = self._load_template('power_of_attorney')
+        template = self._load_template('power_of_attorney', language)
         current_date = datetime.now().strftime("%B %d, %Y")
+        data_with_date = data.copy()
+        data_with_date['date'] = current_date
         
-        document = template.replace('[DATE]', current_date)
-        document = document.replace('[GRANTOR_NAME]', data['grantor_name'])
-        document = document.replace('[ATTORNEY_NAME]', data['attorney_name'])
-        document = document.replace('[POWERS]', data['powers'])
+        document = template.render(**data_with_date)
         
         return document
 
-    def generate_land_sale_deed(self, data):
+    def generate_land_sale_deed(self, data, language='en'):
         """Generate a land sale deed document."""
-        template = self._load_template('land_sale_deed')
+        template = self._load_template('land_sale_deed', language)
         current_date = datetime.now().strftime("%B %d, %Y")
+        data_with_date = data.copy()
+        data_with_date['date'] = current_date
         
-        document = template.replace('[DATE]', current_date)
-        document = document.replace('[SELLER_NAME]', data['seller_name'])
-        document = document.replace('[BUYER_NAME]', data['buyer_name'])
-        document = document.replace('[PROPERTY_DESCRIPTION]', data['property_description'])
-        document = document.replace('[SALE_AMOUNT]', str(data['sale_amount']))
+        document = template.render(**data_with_date)
         
         return document
 
-    def generate_rental_agreement(self, data):
+    def generate_rental_agreement(self, data, language='en'):
         """Generate a rental agreement document."""
-        template = self._load_template('rental_agreement')
+        template = self._load_template('rental_agreement', language)
         current_date = datetime.now().strftime("%B %d, %Y")
+        data_with_date = data.copy()
+        data_with_date['date'] = current_date
         
-        document = template.replace('[DATE]', current_date)
-        document = document.replace('[OWNER_NAME]', data['owner_name'])
-        document = document.replace('[RENTER_NAME]', data['renter_name'])
-        document = document.replace('[PROPERTY_DETAILS]', data['property_details'])
-        document = document.replace('[RENTAL_AMOUNT]', str(data['rental_amount']))
-        document = document.replace('[AGREEMENT_DURATION]', str(data['agreement_duration']))
+        document = template.render(**data_with_date)
         
         return document
 
-    def generate_document(self, doc_type, data):
+    def generate_document(self, doc_type, data, language='en'):
         """Generate a document based on the type and data provided."""
         generators = {
             'house_lease': self.generate_house_lease,
@@ -166,4 +173,4 @@ class DocumentGenerator:
         if doc_type not in generators:
             raise ValueError(f"Invalid document type: {doc_type}")
             
-        return generators[doc_type](data)
+        return generators[doc_type](data, language=language)

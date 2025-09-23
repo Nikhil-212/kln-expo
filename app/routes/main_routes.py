@@ -1,14 +1,12 @@
 """Main application routes."""
 from flask import render_template, session, flash
 from . import main_bp
-from app.models import get_user
+from app.models.users import get_user_from_session
 from app.models.history import get_user_history
 
 @main_bp.route('/')
 def index():
-    user = None
-    if 'user_id' in session:
-        user = get_user(session['user_id'])
+    user = get_user_from_session(session)
     return render_template('index.html', user=user)
 
 @main_bp.route('/history')
@@ -17,6 +15,6 @@ def user_history():
         flash('Please log in to view your history.', 'error')
         return render_template('index.html')
 
-    user = get_user(session['user_id'])
+    user = get_user_from_session(session)
     history = get_user_history(session['user_id'])
     return render_template('history.html', user=user, history=history)

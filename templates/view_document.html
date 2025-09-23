@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ doc_type|title|replace('_', ' ') }} - Legal Document Generator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"> <!-- Font Awesome for icons -->
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body class="bg-light">
@@ -36,28 +37,38 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center no-print">
                         <h4 class="mb-0">{{ doc_type|title|replace('_', ' ') }}</h4>
-                        <div>
-                            <a href="{{ url_for('document.document_form', doc_type=doc_type) }}" class="btn btn-outline-primary btn-sm me-2">Edit</a>
-                            <button onclick="window.print()" class="btn btn-primary btn-sm me-2">Print</button>
-                            <button onclick="downloadAsText()" class="btn btn-success btn-sm me-2">Download TXT</button>
-                            <button onclick="downloadAsDocx()" class="btn btn-info btn-sm me-2">Download DOCX</button>
-                            <button onclick="downloadAsPdf()" class="btn btn-warning btn-sm">Download PDF</button>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <a href="{{ url_for('document.document_form', doc_type=doc_type) }}" class="btn btn-outline-primary btn-icon flex-grow-1 flex-md-grow-0">
+                                <i class="fas fa-edit me-2"></i>Edit Form
+                            </a>
+                            <button id="editDocumentBtn" class="btn btn-secondary btn-icon flex-grow-1 flex-md-grow-0">
+                                <i class="fas fa-pencil-alt me-2"></i>Edit Document (Inline)
+                            </button>
+                            <button id="saveChangesBtn" class="btn btn-success btn-icon flex-grow-1 flex-md-grow-0" style="display:none;">
+                                <i class="fas fa-save me-2"></i>Save Changes
+                            </button>
+                            <button onclick="window.print()" class="btn btn-info btn-icon flex-grow-1 flex-md-grow-0">
+                                <i class="fas fa-print me-2"></i>Print
+                            </button>
+                            <div class="dropdown d-inline-block flex-grow-1 flex-md-grow-0">
+                                <button class="btn btn-warning btn-icon dropdown-toggle" type="button" id="downloadDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-download me-2"></i>Download
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="downloadDropdown">
+                                    <li><a class="dropdown-item" href="#" onclick="downloadAsText()"><i class="far fa-file-alt me-2"></i>TXT</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="downloadAsDocx()"><i class="far fa-file-word me-2"></i>DOCX</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="downloadAsPdf()"><i class="far fa-file-pdf me-2"></i>PDF</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
+                    
                     <div class="card-body">
-                            <div id="document-content" class="bg-white p-4 print-content" style="white-space: pre-wrap; font-family: 'Times New Roman', Times, serif;">
-    {{ content }}
+                            <div id="document-content" class="bg-white p-4 print-content" contenteditable="false">
+    <pre id="documentText">{{ content }}</pre>
                             </div>
-                            {% if entities %}
-                            <hr>
-                            <h5>Extracted Entities</h5>
-                            <ul>
-                                {% for ent, label in entities %}
-                                    <li><strong>{{ label }}</strong>: {{ ent }}</li>
-                                {% endfor %}
-                            </ul>
-                            {% endif %}
                     </div>
+                    
                     <div class="card-footer text-end no-print">
                         <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Back to Home</a>
                     </div>
@@ -69,7 +80,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
     function downloadAsText() {
-        const content = document.getElementById('document-content').innerText;
+        const content = document.getElementById('documentText').innerText;
         const blob = new Blob([content], { type: 'text/plain' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -80,9 +91,7 @@
     }
 
     function downloadAsDocx() {
-        // For now, download as text with .docx extension
-        // In a real implementation, this would call a backend endpoint
-        const content = document.getElementById('document-content').innerText;
+        const content = document.getElementById('documentText').innerText;
         const blob = new Blob([content], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -93,10 +102,54 @@
     }
 
     function downloadAsPdf() {
-        // For now, trigger print dialog which can save as PDF
-        // In a real implementation, this would call a backend endpoint
         window.print();
     }
+
+    // Inline Editing Logic
+    const editDocumentBtn = document.getElementById('editDocumentBtn');
+    const saveChangesBtn = document.getElementById('saveChangesBtn');
+    const documentContent = document.getElementById('document-content');
+    const documentText = document.getElementById('documentText');
+
+    editDocumentBtn.addEventListener('click', () => {
+        const isEditable = documentContent.getAttribute('contenteditable') === 'true';
+        documentContent.setAttribute('contenteditable', !isEditable);
+        editDocumentBtn.style.display = isEditable ? 'inline-block' : 'none';
+        saveChangesBtn.style.display = isEditable ? 'none' : 'inline-block';
+        documentContent.focus(); // Focus on the content to make it clear it's editable
+    });
+
+    saveChangesBtn.addEventListener('click', () => {
+        const editedContent = documentText.innerText;
+        const docType = '{{ doc_type }}'; // Get doc_type from Jinja context
+
+        fetch('/edit_document', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                doc_type: docType,
+                edited_content: editedContent
+            })
+        })
+        .then(response => response.text()) // Assuming the response is a rendered HTML
+        .then(html => {
+            // Replace the current document with the updated HTML
+            document.open();
+            document.write(html);
+            document.close();
+            // Optional: Show a success message
+            // alert('Changes saved successfully!');
+            // documentContent.setAttribute('contenteditable', 'false');
+            // editDocumentBtn.style.display = 'inline-block';
+            // saveChangesBtn.style.display = 'none';
+        })
+        .catch(error => {
+            console.error('Error saving document:', error);
+            alert('Failed to save changes. Please try again.');
+        });
+    });
     </script>
 </body>
 </html>

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - Legal Document Generator</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="{{ url_for('static', filename='js/auth.js') }}" defer></script>
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
     <style>
         .signup-container {
@@ -167,11 +169,11 @@
                             <p>Create your account to get started</p>
                         </div>
                         <div class="card-body p-4">
-                            <form id="signupForm" method="POST" action="{{ url_for('auth.signup') }}">
+                            <form id="signupForm">
                                 <div class="mb-4">
                                     <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                        <input type="text" class="form-control" id="username" name="username" placeholder="Choose a username" required>
+                                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                        <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
                                     </div>
                                 </div>
                                 <div class="mb-4">
@@ -223,6 +225,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Set Supabase credentials for JavaScript
+        window.SUPABASE_URL = "{{ supabase_url }}";
+        window.SUPABASE_KEY = "{{ supabase_anon_key }}";
         // Password strength checker
         document.getElementById('password').addEventListener('input', function() {
             const password = this.value;
@@ -265,61 +270,105 @@
             }
         });
 
-        document.getElementById('signupForm').addEventListener('submit', function(e) {
+        document.getElementById('signupForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const formData = new FormData(this);
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
             const signupBtn = document.getElementById('signupBtn');
             const btnText = signupBtn.querySelector('.btn-text');
             const loading = signupBtn.querySelector('.loading');
+            const colMd5 = document.querySelector('.col-md-5');
+            const card = document.querySelector('.card');
+
+            // Clear previous alerts
+            const existingAlerts = colMd5.querySelectorAll('.alert');
+            existingAlerts.forEach(alert => alert.remove());
+
+            // Client-side validation
+            const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+            if (!emailPattern.test(email)) {
+                const errorAlert = document.createElement('div');
+                errorAlert.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                errorAlert.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>Please enter a valid email address
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                colMd5.insertBefore(errorAlert, card);
+                return;
+            }
+
+            if (password.length < 6) {
+                const errorAlert = document.createElement('div');
+                errorAlert.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                errorAlert.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>Password must be at least 6 characters long
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                colMd5.insertBefore(errorAlert, card);
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                const errorAlert = document.createElement('div');
+                errorAlert.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                errorAlert.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>Passwords do not match
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                colMd5.insertBefore(errorAlert, card);
+                return;
+            }
 
             // Show loading state
             btnText.style.display = 'none';
             loading.style.display = 'inline';
             signupBtn.disabled = true;
 
-            fetch('/auth/signup', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.location.href = data.redirect;
-                } else {
-                    // Hide loading state
-                    btnText.style.display = 'inline';
-                    loading.style.display = 'none';
-                    signupBtn.disabled = false;
+            try {
+                const response = await fetch('/auth/api/signup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password })
+                });
 
-                    // Show error
-                    const alertDiv = document.createElement('div');
-                    alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
-                    alertDiv.innerHTML = `
-                        <i class="fas fa-exclamation-triangle me-2"></i>${data.error || 'Signup failed. Please try again.'}
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Signup successful, show success message
+                    const successAlert = document.createElement('div');
+                    successAlert.className = 'alert alert-success alert-dismissible fade show mt-3';
+                    successAlert.innerHTML = `
+                        <i class="fas fa-check-circle me-2"></i>${data.message}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     `;
-                    document.querySelector('.col-md-5').insertBefore(alertDiv, document.querySelector('.card'));
+                    colMd5.insertBefore(successAlert, card);
+
+                    // Redirect to login after a delay
+                    setTimeout(() => { window.location.href = '{{ url_for('auth.login') }}'; }, 2000);
+                } else {
+                    throw new Error(data.error || 'An unexpected error occurred during signup.');
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
+
+            } catch (error) {
+                console.error('Signup error:', error);
+                // Show error message
+                const errorAlert = document.createElement('div');
+                errorAlert.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                errorAlert.innerHTML = `
+                    <i class="fas fa-exclamation-triangle me-2"></i>${error.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                `;
+                colMd5.insertBefore(errorAlert, card);
+            } finally {
                 // Hide loading state
                 btnText.style.display = 'inline';
                 loading.style.display = 'none';
                 signupBtn.disabled = false;
-
-                // Show error
-                const alertDiv = document.createElement('div');
-                alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
-                alertDiv.innerHTML = `
-                    <i class="fas fa-exclamation-triangle me-2"></i>An error occurred. Please try again.
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                `;
-                document.querySelector('.col-md-5').insertBefore(alertDiv, document.querySelector('.card'));
-            });
+            }
         });
     </script>
 </body>

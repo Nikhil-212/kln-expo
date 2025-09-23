@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
+    language_preference TEXT NOT NULL DEFAULT 'en',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

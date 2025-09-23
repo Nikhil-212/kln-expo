@@ -1,5 +1,6 @@
 
 from flask import Flask, render_template, request, send_file, flash
+from flask_cors import CORS
 from string import Template
 import os
 import spacy
@@ -8,6 +9,7 @@ import tempfile
 
 app = Flask(__name__, static_folder='static')
 app.secret_key = 'your-secret-key-here'  # Change this in production
+CORS(app)
 nlp = spacy.load('en_core_web_sm')
 processor = LegalDocumentProcessor()
 
